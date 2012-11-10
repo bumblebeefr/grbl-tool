@@ -46,7 +46,7 @@ class Joystick(threading.Thread):
 			for e in events :
 				if (not e == pygame.NOEVENT and (e.type == pygame.JOYAXISMOTION or e.type == pygame.JOYBUTTONDOWN  or e.type == pygame.JOYBUTTONUP)):  
 					self._handleJoyEvent(e)
-			time.sleep(0.005)
+			time.sleep(0.000005)
 
 
 	def getAxisValues(self):

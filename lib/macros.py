@@ -7,7 +7,8 @@ import joystick
 
 class Macro:
 	_joystick=None
-	_joystick_inc = 1
+	_joystick_inc = 20
+	_joystick_vitesse = 15000
 
 	
 	def __init__(self,grbl):
@@ -90,14 +91,15 @@ You can manually send commands to grbl that can be :
 				axes = self._joystick.getAxisValues()
 				if(not(axes[0]==0 and axes[1]==0 and axes[2]==0)):
 					move = [x*self._joystick_inc for x in axes]
-					move[3] = round(max(fabs(axes[0]),fabs(axes[1]),fabs(axes[2]))*160)
-					t=sqrt(axes[0]**2+axes[1]**2+axes[2]**2) / move[3]*60
+					move[3] = round(max(fabs(axes[0]),fabs(axes[1]),fabs(axes[2]))*self._joystick_vitesse)
+					move[2]=0
+					t=sqrt(move[0]**2+move[1]**2+move[2]**2) / move[3]*60*1.8
 					gcd = "G01 X%s Y%s Z%s F%s" % tuple(move)
 					self.grbl.streamLine(gcd)
 					debug("sleep %ss"%t)
 					time.sleep(t)
 				else :
-					time.sleep(0.001)
+					time.sleep(0.00001)
 		except joystick.NoJoystickException, e:
 			warn (e)
 		except KeyboardInterrupt, e:
