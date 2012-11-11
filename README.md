@@ -2,7 +2,7 @@ Grbl tool
 =========
 
 Python comand line tool to control a grbl CNC
-_this tool is for the moment not compatible with widows_
+_(this tool is for the moment not compatible with windows, but only with unix like OS)_
 
 Features
 --------
@@ -11,6 +11,15 @@ Features
 * Allow to Manualy control grbl (grbl internal commands, GCODE)
 * Allow to wontrol grbl with a joystick
 * Aloow to stream a GCODE file to grbl
+
+Dependencies
+-----------
+grbl tools depends on the following python libraries:
+
+* pygame 
+* pyserial
+* argparse
+
 
 Extra links
 -----------
