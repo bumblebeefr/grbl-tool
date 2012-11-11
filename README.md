@@ -1,20 +1,20 @@
-Grbl tool
+Grbl-tool
 =========
 
-Python comand line tool to control a grbl CNC
+Python command line tool to control a grbl CNC
 _(this tool is for the moment not compatible with windows, but only with unix like OS)_
 
 Features
 --------
 
 * Automatic Serial (tty) port detection
-* Allow to Manualy control grbl (grbl internal commands, GCODE)
-* Allow to wontrol grbl with a joystick
-* Aloow to stream a GCODE file to grbl
+* Allow to manualy control grbl (grbl internal commands, GCODE)
+* Allow to control grbl with a joystick
+* Allow to stream a GCODE file to grbl
 
 Dependencies
 -----------
-grbl tools depends on the following python libraries:
+grbl-tool depends on the following python libraries:
 
 * pygame 
 * pyserial
