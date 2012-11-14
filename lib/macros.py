@@ -43,10 +43,11 @@ class Macro:
 			warn("No such file %s" %filename)
 			
 	def ls(self):
-		"""List files to stream ind the gcode filder."""
+		"""List .ngc files to stream from the gcode filder."""
 		pathname = os.path.dirname(sys.argv[0]) # current script's path
 		for f in os.listdir("%s/gcode/" % pathname) :
-			print(f)
+			if(f.upper().endswith(".NGC")):
+				print(f)
 
 			
 	def help(self):
@@ -71,8 +72,7 @@ You can manually send commands to grbl that can be :
 		G92 	Change the current coordinates without moving 
 		G93 	Set inverse time feed rate mode
 		G94 	Set units per minute feed rate mode 
- - '$' :  show current grbl settings
- - '$x=value' : set a parameter
+ - '$' :  show current grbl HELP
  - 'exit' : exit this tool"""
 		for m in dir(self):
 			if( not m.startswith("_")):

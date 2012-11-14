@@ -37,22 +37,18 @@ You can manually send commands to grbl that can be :
 
 def processCommand(grbl,macro,strCmd):
 	strCmd = strCmd.strip()
-	if (grbl.seemsGcode(strCmd)):
-		grbl.streamLine(strCmd)
-	elif strCmd.upper() == "EXIT":
+	cmdSplit = strCmd.split(" ")
+	if strCmd.upper() == "EXIT":
 		return False
-	else:
-		cmdSplit = strCmd.split(" ")
-		debug(cmdSplit)
-		if(hasattr(macro,cmdSplit[0])):
-			debug("Command found")
-			args = cmdSplit[1:]
-			try:
-				getattr(macro,cmdSplit[0])(*args)
-			except TypeError,e:
-				warn("Error  :%s" % e)
-		elif(len(strCmd)>0) :
-			warn("Invalid Command %s" % strCmd)
+	elif(hasattr(macro,cmdSplit[0])):
+		debug("Command found")
+		args = cmdSplit[1:]
+		try:
+			getattr(macro,cmdSplit[0])(*args)
+		except TypeError,e:
+			warn("Error  :%s" % e)
+	elif (not grbl.isComment(strCmd)):
+		grbl.streamLine(strCmd)
 	return True
 
 def main():

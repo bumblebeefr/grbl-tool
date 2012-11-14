@@ -1,5 +1,5 @@
 import serial
-import os,sys,time
+import os,sys,time,math
 import re
 from lib.utils import *
 
@@ -9,7 +9,6 @@ from lib.utils import *
 class Grbl:
 	""" Class that wrap a serial connection to a grbl instance and allow to stream Gcode commande to GRBL CNC. """
 	RX_BUFFER_SIZE = 128
-	ALLOWED_START_LETTER = ("G","M","$")
 	def __init__(self,device,bitrate,buffered) : 
 		self.serial=None
 		self.bitrate=bitrate
@@ -19,6 +18,9 @@ class Grbl:
 		self.l_count = 0
 		self.g_count = 0
 		self.c_line = []
+
+		self.defaultSpeed=5000
+		self.zSpeed=150
 
 		
 		if(device != None):# try to find an arduino tty connection (only *nux os supported) //TODO try initate grbl com in case of multiple usbtty
@@ -57,20 +59,45 @@ class Grbl:
 				self.device = dev
 				return s
 			else :
-				debug("%s seamns not to be a valid grbl connection" %dev)
+				debug("%s seams not to be a valid grbl connection" %dev)
 				return None
 		except serial.serialutil.SerialException,e:
 			debug("Unable to connect to device %s : %s" %(dev,e))
 
 	def __clean_line(self,line):
-		line = line.strip()
+		line = line.strip().upper()
 		#add a speed ig G0 on Z axis and no speed ed
-		if(re.match("G00.*Z[\-0-9\.]+.*",line.strip().upper() )and not re.match("G00.*F[\-0-9\.]+.*",line.strip().upper())):
-			comment("Adding 'F100' for Z movement")
-			line +=" F100"
+		#if(re.match("G00.*Z[\-0-9\.]+.*",line.strip().upper() )and not re.match("G00.*F[\-0-9\.]+.*",line.strip().upper())):
+		#	comment("Adding 'F100' for Z movement")
+		#	line +=" F100"
+		if(line.startswith("G1 ") or line.startswith("G0 ") or line.startswith("G01") or line.startswith("G00") or line.startswith("X") or line.startswith("Y") or line.startswith("Z")):
+			line = self._limitZSpeed(line)
 		return line.strip()
+		
+	def _getValue(self,line,k):
+		a = re.findall(k+"[\\-0-9\\.]*",line)
+		if(len(a) >0):
+			return float(a[0][1:])
+		else:
+			return 0
 
-	def streamLineBuffered(self,line):
+	def _limitZSpeed(self,line):
+		x=self._getValue(line,"X")
+		y=self._getValue(line,"Y")
+		z=self._getValue(line,"Z")
+		f=self._getValue(line,"F")
+		
+		if(f == 0):
+			f= self.defaultSpeed
+		if(z != 0):
+			v = self.zSpeed * math.sqrt(x**2+y**2+z**2)/abs(z)
+			if (v < f ) :
+				comment("Z speed limit detected, auto reducing feed rate")
+				line = re.sub("F[0-9\\.]*","",line) #Suppress 'F' elements
+				line = "%s F%.6f" % (line,v) #Add corrected Feed Rate
+		return line
+
+	def streamLineBuffered(self,line): #TODO Est ce vraiment utile de maitenir ce buffured mode ?
 		"""Send/Stream the specified GCODE Command line to grbl by using buffered streamin"""
 		self.l_count += 1 # Iterate line counter
 		l_block = self.__clean_line(line)
@@ -93,7 +120,7 @@ class Grbl:
 		debug("BUF:"+str(sum(self.c_line))+" REC:"+grbl_out)
 
 
-	def streamLineUnbuffered(self,line) :
+	def streamLineUnbuffered(self,line) : 
 		l_block = self.__clean_line(line)
 		log_out(l_block)
 		self.serial.write(l_block + '\n') # Send block to grbl
@@ -118,12 +145,16 @@ class Grbl:
 			warn("Streaming interrupted. Grbl connection will be reset to trop current processing Job")
 			self.resetConnection()
 			
-	def seemsGcode(self,gcode):
-		return len(gcode.strip()) >0 and gcode.strip()[0].upper() in Grbl.ALLOWED_START_LETTER
+	def isComment(self,gcode):
+		gcode = gcode.strip()
+		return len(gcode) ==0 or (gcode.startswith("(") and gcode.endswith(")"))
+
+
+
 
 	def streamLine(self,line):
 		self.running = True
-		if(self.seemsGcode(line.strip())):
+		if(not self.isComment(line.strip())):
 			if(self.buffered) :
 				self.streamLineBuffered(line)
 			else :
