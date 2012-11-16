@@ -29,18 +29,32 @@ class Macro:
 		comment("Switching to absolute positioning, and reseting origin to current position")
 		self.grbl.stream(("G91","G92 X0 Y0 Z0"))
 
-	def stream(self,filename):
-		"""Stream the specified file to grbl. You can specify absolute path of the file, or name of a file in the gcode folder."""
+	def stream(self,filename,*args):
+		"""Stream the specified file to grbl. You can specify absolute path of the file, or name of a file in the gcode folder. You can add somme addition argument fter file name :
+	 - 'debug' :  stream the file step by step
+	 - 'limit' :  try add a Z feed rate limitation
+	 - 'buffered' : use buffered mode to stream the file"""
 		pathname = os.path.dirname(sys.argv[0]) # current script's path
+		if("buffered" in args) :
+			self.grbl.buffered = True
+		if("limit" in args) :
+			self.grbl.zLimit = True
 		if(not filename.startswith("/")):
 			filename = os.path.abspath("%s/gcode/%s" % (pathname,filename))
 		if(os.path.isfile(filename)):
 			comment("Start streaming %s file" %filename)
 			f = open(filename, 'r')
-			self.grbl.stream(f)
+			try:
+				self.grbl.stream(f, "debug" in args)
+			except KeyboardInterrupt :
+				print
+				warn("Streaming interrupted. Grbl connection will be reset to stop current processing Job")
+				self.grbl.resetConnection()
 			f.close()
 		else:
 			warn("No such file %s" %filename)
+		self.grbl.buffered = False
+		self.grbl.zLimit = False
 			
 	def ls(self):
 		"""List .ngc files to stream from the gcode filder."""
@@ -50,9 +64,12 @@ class Macro:
 				print(f)
 
 			
-	def help(self):
+	def help(self,cmd=None):
 		"""Show this help"""
-		print"""
+		if( cmd in dir(self)):
+			print(getattr(self,cmd).__doc__)
+		else :
+			print"""
 You can manually send commands to grbl that can be : 
  - A regular GCODE command such as : 
 		G0/G00 	Switch to rapid linear motion mode (seek)
@@ -74,14 +91,15 @@ You can manually send commands to grbl that can be :
 		G94 	Set units per minute feed rate mode 
  - '$' :  show current grbl HELP
  - 'exit' : exit this tool"""
-		for m in dir(self):
-			if( not m.startswith("_")):
-				print(" - %s : %s"%(m,getattr(self,m).__doc__))
+			for m in dir(self):
+				if( not m.startswith("_")):
+					print(" - %s : %s"%(m,getattr(self,m).__doc__))
 
 
 
 
 	def joystick(self):
+		""" Launch joystick command mode"""
 		info("Starting joystickMode")
 		if(self._joystick == None):
 			self._joystick = joystick.Joystick()

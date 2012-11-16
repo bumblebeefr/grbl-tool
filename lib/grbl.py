@@ -19,8 +19,11 @@ class Grbl:
 		self.g_count = 0
 		self.c_line = []
 
-		self.defaultSpeed=5000
+		self.defaultSpeed=500
 		self.zSpeed=150
+		self.zLimit = False
+
+		self.lastPosition = [0,0,0,0]
 
 		
 		if(device != None):# try to find an arduino tty connection (only *nux os supported) //TODO try initate grbl com in case of multiple usbtty
@@ -70,8 +73,9 @@ class Grbl:
 		#if(re.match("G00.*Z[\-0-9\.]+.*",line.strip().upper() )and not re.match("G00.*F[\-0-9\.]+.*",line.strip().upper())):
 		#	comment("Adding 'F100' for Z movement")
 		#	line +=" F100"
-		if(line.startswith("G1 ") or line.startswith("G0 ") or line.startswith("G01") or line.startswith("G00") or line.startswith("X") or line.startswith("Y") or line.startswith("Z")):
-			line = self._limitZSpeed(line)
+		if(self.zLimit) :
+			if(line.startswith("G1 ") or line.startswith("G0 ") or line.startswith("G01") or line.startswith("G00") or line.startswith("X") or line.startswith("Y") or line.startswith("Z")):
+				line = self._limitZSpeed(line)
 		return line.strip()
 		
 	def _getValue(self,line,k):
@@ -82,22 +86,27 @@ class Grbl:
 			return 0
 
 	def _limitZSpeed(self,line):
-		x=self._getValue(line,"X")
-		y=self._getValue(line,"Y")
-		z=self._getValue(line,"Z")
-		f=self._getValue(line,"F")
-		
+		position = [self._getValue(line,"X"),self._getValue(line,"Y"),self._getValue(line,"Z"),self._getValue(line,"F")]
+		x=position[0]-self.lastPosition[0]
+		y=position[1]-self.lastPosition[1]
+		z=position[2]-self.lastPosition[2]
+		f=position[3]
+		#debug("Translation %s %s %s %s"%(x,y,z,f))
 		if(f == 0):
 			f= self.defaultSpeed
 		if(z != 0):
 			v = self.zSpeed * math.sqrt(x**2+y**2+z**2)/abs(z)
+			#debug("Compurted speed %s" %v)
 			if (v < f ) :
 				comment("Z speed limit detected, auto reducing feed rate")
 				line = re.sub("F[0-9\\.]*","",line) #Suppress 'F' elements
-				line = "%s F%.6f" % (line,v) #Add corrected Feed Rate
+				line = "%s F%.4f" % (line,v) #Add corrected Feed Rate
+		position[3] = f
+		self.lastPosition = position
+		
 		return line
 
-	def streamLineBuffered(self,line): #TODO Est ce vraiment utile de maitenir ce buffured mode ?
+	def streamLineBuffered(self,line): #TODO Est ce vraiment utile de maitenir ce buffered mode ?
 		"""Send/Stream the specified GCODE Command line to grbl by using buffered streamin"""
 		self.l_count += 1 # Iterate line counter
 		l_block = self.__clean_line(line)
@@ -136,10 +145,13 @@ class Grbl:
 				log_in(out_temp)
 				
 
-	def stream(self,lines):
+	def stream(self,lines,debug=False,delay = 0):
 		try:
 			for line in lines:
 				self.streamLine(line)
+				time.sleep(0.01)
+				if debug :
+					raw_input("")
 		except KeyboardInterrupt :
 			print
 			warn("Streaming interrupted. Grbl connection will be reset to trop current processing Job")
@@ -147,7 +159,7 @@ class Grbl:
 			
 	def isComment(self,gcode):
 		gcode = gcode.strip()
-		return len(gcode) ==0 or (gcode.startswith("(") and gcode.endswith(")"))
+		return gcode.startswith("%") or len(gcode) ==0 or (gcode.startswith("(") and gcode.endswith(")"))
 
 
 
