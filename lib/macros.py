@@ -6,6 +6,9 @@ import os, sys, time
 class Macro:
     def __init__(self, grbl):
         self.grbl = grbl
+        self.alias = {
+            "?":"status"
+        }
 
     def abs(self):
         """Switch to absolute positioning (G90)"""
@@ -58,6 +61,9 @@ class Macro:
 
     def clear(self):
         os.system("clear")
+
+    def status(self):
+        print(self.grbl.status)
 
     def help(self, cmd=None):
         """Show this help"""

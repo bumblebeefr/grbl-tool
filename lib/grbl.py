@@ -7,7 +7,7 @@ import re
 import serial
 import threading
 from Queue import Queue, Empty
-
+from time import sleep
 
 class GrblSerialReader(threading.Thread):
     def __init__(self, grbl):
@@ -15,6 +15,13 @@ class GrblSerialReader(threading.Thread):
         self.grbl = grbl
         self.daemon = True
         self.start()
+
+    def sendOutput(self, output):
+        if(output.get('status', '') == 'ok' and output.get('text', [])):
+            if(output['text'][0][0] == '<' and output['text'][0][-1] == '>'):
+                self.grbl.status = output['text'][0]
+                return
+        self.grbl.command_output_queue.put(output)
 
     def run(self):
         output = {'status': "ok", 'text': []}
@@ -26,11 +33,23 @@ class GrblSerialReader(threading.Thread):
                 else:
                     output['status'] = 'error'
                     output['text'].append(tmp)
-
-                self.grbl.command_output_queue.put(output)
+                self.sendOutput(output)
                 output = {'status': "ok", 'text': []}
             else:
                 output['text'].append(tmp)
+
+class GrblStatusManager(threading.Thread):
+    def __init__(self, grbl):
+        super(GrblStatusManager, self).__init__()
+        self.grbl = grbl
+        self.daemon = True
+        self.start()
+
+    def run(self):
+        output = {'status': "ok", 'text': []}
+        while True:
+            self.grbl.serial.write('?\n')
+            sleep(0.1)
 
 
 class Grbl:
@@ -40,6 +59,7 @@ class Grbl:
         self.serial = None
         self.bitrate = bitrate
         self.running = False
+        self.status = ""
 
         self.l_count = 0
         self.g_count = 0
@@ -68,6 +88,7 @@ class Grbl:
             exit(1)
         else:
             self.serial_reader = GrblSerialReader(self)
+            self.serial_status_manager = GrblStatusManager(self)
 
     def __initializeSerialPort(self, dev):
         """Try to initalise a Serial connection to the specified device. Return the  device if we are connected to a vlaid Grbl device, None otherwise. """
