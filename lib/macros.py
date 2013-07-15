@@ -18,8 +18,8 @@ class Macro:
         self.grbl.streamLine("G91")
 
     def zero(self):
-        """Switch to absolute positioning, and reseting origin to current position."""
-        comment("Switching to absolute positioning, and reseting origin to current position")
+        """Switch to absolute positioning, and reset origin to current position."""
+        comment("Switching to absolute positioning, and reset origin to current position")
         self.grbl.stream(("G90", "G92 X0 Y0 Z0"))
 
     def stream(self, filename, *args):
