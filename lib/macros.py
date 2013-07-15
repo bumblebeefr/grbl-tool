@@ -27,7 +27,7 @@ class Macro:
 	def zero(self):
 		"""Switch to absolute positioning, and reseting origin to current position."""
 		comment("Switching to absolute positioning, and reseting origin to current position")
-		self.grbl.stream(("G91","G92 X0 Y0 Z0"))
+		self.grbl.stream(("G90","G92 X0 Y0 Z0"))
 
 	def stream(self,filename,*args):
 		"""Stream the specified file to grbl. You can specify absolute path of the file, or name of a file in the gcode folder. You can add somme addition argument fter file name :
@@ -64,6 +64,9 @@ class Macro:
 				print(f)
 
 			
+	def clear(self):
+		os.system("clear")
+
 	def help(self,cmd=None):
 		"""Show this help"""
 		if( cmd in dir(self)):
