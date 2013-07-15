@@ -1,17 +1,44 @@
-import serial
-import os, sys, time, math
-import re
 from lib.utils import *
+import os
+import sys
+import time
+import math
+import re
+import serial
+import threading
+from Queue import Queue, Empty
+
+
+class GrblSerialReader(threading.Thread):
+    def __init__(self, grbl):
+        super(GrblSerialReader, self).__init__()
+        self.grbl = grbl
+        self.daemon = True
+        self.start()
+
+    def run(self):
+        output = {'status': "ok", 'text': []}
+        while True:
+            tmp = self.grbl.serial.readline().strip()
+            if(tmp[:5] in ('ok', 'error')):
+                if(tmp == 'ok'):
+                    output['status'] = tmp
+                else:
+                    output['status'] = 'error'
+                    output['text'].append(tmp)
+
+                self.grbl.command_output_queue.put(output)
+                output = {'status': "ok", 'text': []}
+            else:
+                output['text'].append(tmp)
 
 
 class Grbl:
     """ Class that wrap a serial connection to a grbl instance and allow to stream Gcode commande to GRBL CNC. """
-    RX_BUFFER_SIZE = 128
 
     def __init__(self, device, bitrate, buffered):
         self.serial = None
         self.bitrate = bitrate
-        self.buffered = buffered
         self.running = False
 
         self.l_count = 0
@@ -21,6 +48,9 @@ class Grbl:
         self.defaultSpeed = 500
         self.zSpeed = 150
         self.zLimit = False
+
+        self.command_output_queue = Queue()
+        self.status_queue = Queue()
 
         self.lastPosition = [0, 0, 0, 0]
 
@@ -36,6 +66,8 @@ class Grbl:
         if(self.serial == None):
             warn("Unable to connect to a Grbl device")
             exit(1)
+        else:
+            self.serial_reader = GrblSerialReader(self)
 
     def __initializeSerialPort(self, dev):
         """Try to initalise a Serial connection to the specified device. Return the  device if we are connected to a vlaid Grbl device, None otherwise. """
@@ -103,42 +135,29 @@ class Grbl:
         self.lastPosition = position
         return line
 
-    def streamLineBuffered(self, line):  # TODO Est ce vraiment utile de maitenir ce buffered mode ?
-        """Send/Stream the specified GCODE Command line to grbl by using buffered streamin"""
-        self.l_count += 1  # Iterate line counter
+    def sendLine(self, line):
         l_block = self.__clean_line(line)
-        self.c_line.append(len(l_block) + 1)  # Track number of characters in grbl serial read buffer
-        grbl_out = ''
-        while sum(self.c_line) >= Grbl.RX_BUFFER_SIZE - 1 | self.serial.inWaiting():
-            out_temp = self.serial.readline().strip()  # Wait for grbl response
-            if out_temp.find('ok') < 0 and out_temp.find('error') < 0:
-                log_in(out_temp)  # Debug response
-            else:
-                if(out_temp.find('error') != -1):
-                    warn("Grbl " + out_temp)
-                grbl_out += out_temp
-                self.g_count += 1  # Iterate g-code counter
-                grbl_out += str(self.g_count)  # Add line finished indicator
-                del self.c_line[0]
-        debug("Line:" + str(self.l_count))
         log_out(l_block)
         self.serial.write(l_block + '\n')  # Send block to grbl
-        debug("BUF:" + str(sum(self.c_line)) + " REC:" + grbl_out)
+        output = self.command_output_queue.get()
+        if(output.get('status', None) == 'ok'):
+            for txt in output.get('text', []):
+                log_in(txt)
+            log_in('ok')
+        else:
+            for txt in output.get('text', []):
+                warn(txt)
 
-    def streamLineUnbuffered(self, line):
-        l_block = self.__clean_line(line)
-        log_out(l_block)
-        self.serial.write(l_block + '\n')  # Send block to grbl
-        while True:
-            out_temp = self.serial.readline().strip()
-            if (out_temp.find('ok') != -1):
-                log_in(out_temp)
-                break
-            elif (out_temp.find('error') != -1):
-                warn(out_temp)
-                break
-            else:
-                log_in(out_temp)
+#         while True:
+#             out_temp = self.serial.readline().strip()
+#             if (out_temp.find('ok') != -1):
+#                 log_in(out_temp)
+#                 break
+#             elif (out_temp.find('error') != -1):
+#                 warn(out_temp)
+#                 break
+#             else:
+#                 log_in(out_temp)
 
     def stream(self, lines, debug=False, delay=0):
         try:
@@ -159,10 +178,7 @@ class Grbl:
     def streamLine(self, line):
         self.running = True
         if(not self.isComment(line.strip())):
-            if(self.buffered):
-                self.streamLineBuffered(line)
-            else:
-                self.streamLineUnbuffered(line)
+            self.sendLine(line)
         elif(len(line.strip()) > 0):
             comment(line.strip())
 
