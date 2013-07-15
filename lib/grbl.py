@@ -8,6 +8,7 @@ import serial
 import threading
 from Queue import Queue, Empty
 from time import sleep
+from parse import parse
 
 class GrblSerialReader(threading.Thread):
     def __init__(self, grbl):
@@ -17,9 +18,10 @@ class GrblSerialReader(threading.Thread):
         self.start()
 
     def sendOutput(self, output):
-        if(output.get('status', '') == 'ok' and output.get('text', [])):
+        if(output.get('status', '') == 'ok' and output.get('text', []) and output.get('text')[0]):
             if(output['text'][0][0] == '<' and output['text'][0][-1] == '>'):
-                self.grbl.status = output['text'][0]
+                status = output['text'][0]
+                self.grbl.status = parse('<{status},MPos:{machine.x:g},{machine.y:g},{machine.z:g},WPos:{work.x:g},{work.y:g},{work.z:g}>', status).named
                 return
         self.grbl.command_output_queue.put(output)
 
@@ -38,6 +40,7 @@ class GrblSerialReader(threading.Thread):
             else:
                 output['text'].append(tmp)
 
+
 class GrblStatusManager(threading.Thread):
     def __init__(self, grbl):
         super(GrblStatusManager, self).__init__()
@@ -46,10 +49,12 @@ class GrblStatusManager(threading.Thread):
         self.start()
 
     def run(self):
-        output = {'status': "ok", 'text': []}
         while True:
-            self.grbl.serial.write('?\n')
-            sleep(0.1)
+            if(self.grbl.status.get('status', None) != 'Idle' or self.grbl.running):
+                if(self.grbl.status.get('status', None) == 'Idle'):
+                    self.grbl.running = False
+                self.grbl.serial.write('?\n')
+            sleep(0.2)
 
 
 class Grbl:
@@ -59,7 +64,7 @@ class Grbl:
         self.serial = None
         self.bitrate = bitrate
         self.running = False
-        self.status = ""
+        self.status = {}
 
         self.l_count = 0
         self.g_count = 0
