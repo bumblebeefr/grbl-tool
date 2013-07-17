@@ -1,3 +1,6 @@
 bpython
 pyserial
 parse
+flask
+gevent
+gevent-websocket

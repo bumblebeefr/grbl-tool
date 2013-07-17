@@ -1,14 +1,14 @@
-from lib.utils import *
+from lib.utils import comment, debug, info, warn, log_out, log_in
 import os
-import sys
 import time
 import math
 import re
 import serial
 import threading
-from Queue import Queue, Empty
+from Queue import Queue
 from time import sleep
 from parse import parse
+
 
 class GrblSerialReader(threading.Thread):
     def __init__(self, grbl):
@@ -75,9 +75,6 @@ class Grbl:
         self.zLimit = False
 
         self.command_output_queue = Queue()
-        self.status_queue = Queue()
-
-        self.lastPosition = [0, 0, 0, 0]
 
         if(device != None):  # try to find an arduino tty connection (only *nux os supported) //TODO try initate grbl com in case of multiple usbtty
             self.serial = self.__initializeSerialPort(device)
@@ -173,17 +170,6 @@ class Grbl:
         else:
             for txt in output.get('text', []):
                 warn(txt)
-
-#         while True:
-#             out_temp = self.serial.readline().strip()
-#             if (out_temp.find('ok') != -1):
-#                 log_in(out_temp)
-#                 break
-#             elif (out_temp.find('error') != -1):
-#                 warn(out_temp)
-#                 break
-#             else:
-#                 log_in(out_temp)
 
     def stream(self, lines, debug=False, delay=0):
         try:
