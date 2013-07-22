@@ -8,6 +8,8 @@ import threading
 from Queue import Queue
 from time import sleep
 from parse import parse
+from compiler.pycodegen import EXCEPT
+from serial.serialutil import SerialException
 
 
 class GrblSerialReader(threading.Thread):
@@ -62,7 +64,8 @@ class Grbl:
 
     def __init__(self, device, bitrate, buffered):
         self.serial = None
-        self.bitrate = bitrate
+        self.bitrate = None
+        self.default_bitrate = bitrate
         self.running = False
         self.status = {}
 
@@ -76,27 +79,11 @@ class Grbl:
 
         self.command_output_queue = Queue()
 
-        if(device != None):  # try to find an arduino tty connection (only *nux os supported) //TODO try initate grbl com in case of multiple usbtty
-            self.serial = self.__initializeSerialPort(device)
-        if(self.serial == None):
-            for f in os.listdir("/dev/"):
-                if(f.find("ttyUSB") == 0 or f.find("ttyACM") == 0):
-                    dev = "/dev/" + f
-                    self.serial = self.__initializeSerialPort(dev)
-                    if (self.serial != None):
-                        break
-        if(self.serial == None):
-            warn("Unable to connect to a Grbl device")
-            exit(1)
-        else:
-            self.serial_reader = GrblSerialReader(self)
-            self.serial_status_manager = GrblStatusManager(self)
-
-    def __initializeSerialPort(self, dev):
-        """Try to initalise a Serial connection to the specified device. Return the  device if we are connected to a vlaid Grbl device, None otherwise. """
+    def __initializeSerialPort(self, dev, bitrate):
+        """Try to initalise a Serial connection to the specified device. Return the  device if we are connected to a valid Grbl device, None otherwise. """
         debug("Initializing grbl connection to %s ..." % dev)
         try:
-            s = serial.Serial(dev, self.bitrate)
+            s = serial.Serial(dev, bitrate)
             # Wake up grbl
             s.write("\r\n\r\n")
             initialized = None
@@ -113,6 +100,7 @@ class Grbl:
                 s.timeout = None
                 s.flushInput()
                 self.device = dev
+                self.bitrate = bitrate
                 return s
             else:
                 debug("%s seams not to be a valid grbl connection" % dev)
@@ -138,6 +126,36 @@ class Grbl:
         else:
             return 0
 
+    def connect(self, device=None, bitrate=None):
+        """
+        Connect to the specified grbl/arduino board.
+        If no device specied, of if the specified device connection fail, it will try to fin the correct device/port.
+        (auto detection does not work on windows platform yet).
+        """
+        if(device != None):  # try to find an arduino tty connection (only *nux os supported) //TODO try initate grbl com in case of multiple usbtty
+            if(bitrate):
+                self.serial = self.__initializeSerialPort(device, bitrate)
+            else:
+                self.serial = self.__initializeSerialPort(device, self.default_bitrate)
+
+        if(self.serial == None):
+            for f in os.listdir("/dev/"):
+                if(f.find("ttyUSB") == 0 or f.find("ttyACM") == 0):
+                    dev = "/dev/" + f
+                    if(bitrate):
+                        self.serial = self.__initializeSerialPort(dev, bitrate)
+                    else:
+                        self.serial = self.__initializeSerialPort(dev, self.default_bitrate)
+                    if (self.serial != None):
+                        break
+        if(self.serial == None):
+            warn("Unable to connect to a Grbl device")
+            return False
+        else:
+            self.serial_reader = GrblSerialReader(self)
+            self.serial_status_manager = GrblStatusManager(self)
+            return True
+
     def _limitZSpeed(self, line):
         position = [self._getValue(line, "X"), self._getValue(line, "Y"), self._getValue(line, "Z"), self._getValue(line, "F")]
         x = position[0] - self.lastPosition[0]
@@ -159,17 +177,20 @@ class Grbl:
         return line
 
     def sendLine(self, line):
-        l_block = self.__clean_line(line)
-        log_out(l_block)
-        self.serial.write(l_block + '\n')  # Send block to grbl
-        output = self.command_output_queue.get()
-        if(output.get('status', None) == 'ok'):
-            for txt in output.get('text', []):
-                log_in(txt)
-            log_in('ok')
+        if self.serial :
+            l_block = self.__clean_line(line)
+            log_out(l_block)
+            self.serial.write(l_block + '\n')  # Send block to grbl
+            output = self.command_output_queue.get()
+            if(output.get('status', None) == 'ok'):
+                for txt in output.get('text', []):
+                    log_in(txt)
+                log_in('ok')
+            else:
+                for txt in output.get('text', []):
+                    warn(txt)
         else:
-            for txt in output.get('text', []):
-                warn(txt)
+            warn("Not connected to GRBL board.")
 
     def stream(self, lines, debug=False, delay=0):
         try:
@@ -194,12 +215,42 @@ class Grbl:
         elif(len(line.strip()) > 0):
             comment(line.strip())
 
+    def processCommand(self, macro, strCmd):
+        try:
+            strCmd = strCmd.strip()
+            cmdSplit = strCmd.split(" ")
+            if strCmd.upper() == "EXIT":
+                return False
+            elif(hasattr(macro, cmdSplit[0])):
+                debug("Command found")
+                args = cmdSplit[1:]
+                try:
+                    getattr(macro, cmdSplit[0])(*args)
+                except TypeError, e:
+                    warn("Error  :%s" % e)
+            elif(hasattr(macro, macro._alias.get(cmdSplit[0], ""))):
+                debug("Command found")
+                args = cmdSplit[1:]
+                try:
+                    getattr(macro, macro._alias.get(cmdSplit[0], ""))(*args)
+                except TypeError, e:
+                    warn("Error  :%s" % e)
+            elif (not self.isComment(strCmd)):
+                self.streamLine(strCmd)
+        except SerialException as e:
+            warn("Not executed, Serial connection error %s", e)
+        return True
+
     def close(self):
-        self.serial.close()
+        if(self.serial):
+            self.serial.close()
 
     def resetConnection(self):
-        self.serial.close()
-        self.running = False
-        self.serial.open()
-        time.sleep(2)
-        self.serial.flushInput()
+        if(self.serial):
+            self.serial.close()
+            self.running = False
+            self.serial.open()
+            time.sleep(2)
+            self.serial.flushInput()
+        else:
+            warn("Not connected to GRBL board.")

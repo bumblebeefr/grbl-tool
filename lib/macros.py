@@ -1,29 +1,43 @@
-from utils import *
 from math import *
-import os, sys, time
+from utils import *
+import os
+import sys
+
+
+cmd_startup = """
+=================== Command line mode ===================
+
+You can manually send commands to grbl that can be :
+ - '$' to show current grbl settings
+ - '$x=value' to set a parameter
+ - 'exit' to exit this tool
+ - 'help' to show more help
+
+=========================================================
+"""
 
 
 class Macro:
     def __init__(self, grbl):
-        self.grbl = grbl
-        self.alias = {
-            "?":"status"
+        self._grbl = grbl
+        self._alias = {
+            "?": "status"
         }
 
     def abs(self):
         """Switch to absolute positioning (G90)"""
         comment("Switching to absolute positioning")
-        self.grbl.streamLine("G90")
+        self._grbl.streamLine("G90")
 
     def rel(self):
         """Switch to relative/incremental positioning (G91)"""
         comment("Switching to relative/incremental positioning")
-        self.grbl.streamLine("G91")
+        self._grbl.streamLine("G91")
 
     def zero(self):
         """Switch to absolute positioning, and reset origin to current position."""
         comment("Switching to absolute positioning, and reset origin to current position")
-        self.grbl.stream(("G90", "G92 X0 Y0 Z0"))
+        self._grbl.stream(("G90", "G92 X0 Y0 Z0"))
 
     def stream(self, filename, *args):
         """Stream the specified file to grbl. You can specify absolute path of the file, or name of a file in the gcode folder. You can add somme addition argument fter file name:
@@ -32,25 +46,35 @@ class Macro:
      - 'buffered': use buffered mode to stream the file"""
         pathname = os.path.dirname(sys.argv[0])  # current script's path
         if("buffered" in args):
-            self.grbl.buffered = True
+            self._grbl.buffered = True
         if("limit" in args):
-            self.grbl.zLimit = True
+            self._grbl.zLimit = True
         if(not filename.startswith("/")):
             filename = os.path.abspath("%s/gcode/%s" % (pathname, filename))
         if(os.path.isfile(filename)):
             comment("Start streaming %s file" % filename)
             f = open(filename, 'r')
             try:
-                self.grbl.stream(f, "debug" in args)
+                self._grbl.stream(f, "debug" in args)
             except KeyboardInterrupt:
                 print
                 warn("Streaming interrupted. Grbl connection will be reset to stop current processing Job")
-                self.grbl.resetConnection()
+                self._grbl.resetConnection()
             f.close()
         else:
             warn("No such file %s" % filename)
-        self.grbl.buffered = False
-        self.grbl.zLimit = False
+        self._grbl.buffered = False
+        self._grbl.zLimit = False
+
+    def connect(self, dev=None, bitrate=None):
+        """Connect to a grbl/arduino board.
+    - dev : device/port to connect to . If not indicated will try to find the device automatically.
+    - bitrate : bitrate used by the grbl board to communicate.
+        """
+        if(bitrate):
+            bitrate = int(bitrate)
+        if(self._grbl.connect(dev, bitrate)):
+            print Color.STRONG + cmd_startup + Color.RESET
 
     def ls(self):
         """List .ngc files to stream from the gcode filder."""
@@ -60,10 +84,12 @@ class Macro:
                 print(f)
 
     def clear(self):
+        """Clear console"""
         os.system("clear")
 
     def status(self):
-        print(self.grbl.status)
+        """Show grbl status and position. Same as the ? grbl internal command"""
+        print(self._grbl.status)
 
     def help(self, cmd=None):
         """Show this help"""

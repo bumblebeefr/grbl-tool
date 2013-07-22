@@ -22,18 +22,6 @@ from lib.grbl import *
 import lib.macros
 
 
-cmd_startup = """
-=================== Command line mode ===================
-
-You can manually send commands to grbl that can be :
- - '$' to show current grbl settings
- - '$x=value' to set a parameter
- - 'exit' to exit this tool
- - 'help' to show more help
-
-=========================================================
-"""
-
 class WebApp(threading.Thread):
     def __init__(self):
         super(WebApp, self).__init__()
@@ -46,29 +34,6 @@ class WebApp(threading.Thread):
         from web import webapp
         http_server = WSGIServer(("127.0.0.1", 8000), webapp, handler_class=WebSocketHandler)
         http_server.serve_forever()
-
-def processCommand(grbl, macro, strCmd):
-    strCmd = strCmd.strip()
-    cmdSplit = strCmd.split(" ")
-    if strCmd.upper() == "EXIT":
-        return False
-    elif(hasattr(macro, cmdSplit[0])):
-        debug("Command found")
-        args = cmdSplit[1:]
-        try:
-            getattr(macro, cmdSplit[0])(*args)
-        except TypeError, e:
-            warn("Error  :%s" % e)
-    elif(hasattr(macro, macro.alias.get(cmdSplit[0], ""))):
-        debug("Command found")
-        args = cmdSplit[1:]
-        try:
-            getattr(macro, macro.alias.get(cmdSplit[0], ""))(*args)
-        except TypeError, e:
-            warn("Error  :%s" % e)
-    elif (not grbl.isComment(strCmd)):
-        grbl.streamLine(strCmd)
-    return True
 
 def main():
     global args
@@ -102,13 +67,12 @@ def start_cli():
     # Initialize
     grbl = Grbl(args.device, args.bitrate, args.buffered)
     macro = lib.macros.Macro(grbl)
+    macro.connect(args.device, args.bitrate)
     try :
         if(args.stream == None):
-            print Color.STRONG + cmd_startup + Color.RESET
-            grbl.buffered = False
             while True:
                 line = raw_input(" ~ ")
-                if (not processCommand(grbl, macro, line)):
+                if (not grbl.processCommand(macro, line)):
                     info("Exiting ...")
                     break;
         else:
