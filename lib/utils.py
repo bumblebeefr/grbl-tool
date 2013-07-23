@@ -1,4 +1,7 @@
-class Color:
+from lib import events
+
+
+class _color:
     RESET = '\033[39m\033[0m'
     DEFAULT = '\033[39m'
     BLACK = '\033[30m'
@@ -16,29 +19,35 @@ class Color:
 
 def info(s):
     # if (not args.quiet):
-        print("%s=== %s%s" % (Color.STRONG, s, Color.RESET))
+        events.trigger("console.info", {"message": s})
+        print("%s=== %s%s" % (_color.STRONG, s, _color.RESET))
 
 
 def log_in(s):
     # if (not args.quiet):
-        print("%s<<< %s%s" % (Color.CYAN, s, Color.RESET))
+        events.trigger("grbl.input", {"message": s})
+        print("%s<<< %s%s" % (_color.CYAN, s, _color.RESET))
 
 
 def log_out(s):
     # if (not args.quiet):
-        print("%s>>> %s%s" % (Color.GREEN, s, Color.RESET))
+        events.trigger("grbl.output", {"message": s})
+        print("%s>>> %s%s" % (_color.GREEN, s, _color.RESET))
 
 
 def comment(s):
     # if (not args.quiet):
-        print("%s### %s%s" % (Color.STRONG + Color.BLACK, s, Color.RESET))
+        events.trigger("console.comment", {"message": s})
+        print("%s### %s%s" % (_color.STRONG + _color.BLACK, s, _color.RESET))
 
 
 def debug(s):
     # if(args.verbose and not args.quiet):
-        print("%s!!! %s%s" % (Color.MAGENTA, s, Color.RESET))
+        events.trigger("console.debug", {"message": s})
+        print("%s!!! %s%s" % (_color.MAGENTA, s, _color.RESET))
 
 
 def warn(s):
     # if (not args.quiet):
-        print("%s/!\ %s%s" % (Color.YELLOW, s, Color.RESET))
+        events.trigger("console.warn", {"message": s})
+        print("%s/!\ %s%s" % (_color.YELLOW, s, _color.RESET))

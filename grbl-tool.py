@@ -20,6 +20,7 @@ import readline
 from lib.utils import *
 from lib.grbl import *
 import lib.macros
+import webbrowser
 
 cli_startup = """
 =================== Command line mode ===================
@@ -67,7 +68,9 @@ def main():
 
 def start_gui():
     WebApp()
-    os.system("firefox -app firefox-app/application.ini")
+    webbrowser.get('firefox').open("http://localhost:8000/")
+    line = raw_input(" exit ")
+    # os.system("firefox -app firefox-app/application.ini -jsconsole")
 
 
 def start_cli():
@@ -110,8 +113,6 @@ def start_cli():
     grbl.close()
     readline.set_history_length(1500)
     readline.write_history_file(os.path.join(pathname, ".history"))
-
-
 
 
 if __name__ == "__main__":
