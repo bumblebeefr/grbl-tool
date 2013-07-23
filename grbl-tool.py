@@ -21,6 +21,18 @@ from lib.utils import *
 from lib.grbl import *
 import lib.macros
 
+cli_startup = """
+=================== Command line mode ===================
+
+You can manually send commands to grbl that can be :
+ - '$' to show current grbl settings
+ - '$x=value' to set a parameter
+ - 'exit' to exit this tool
+ - 'help' to show more help
+
+=========================================================
+"""
+
 
 class WebApp(threading.Thread):
     def __init__(self):
@@ -31,8 +43,8 @@ class WebApp(threading.Thread):
     def run(self):
         from gevent.pywsgi import WSGIServer
         from geventwebsocket.handler import WebSocketHandler
-        from web import webapp
-        http_server = WSGIServer(("127.0.0.1", 8000), webapp, handler_class=WebSocketHandler)
+        import web
+        http_server = WSGIServer(("127.0.0.1", 8000), web.webapp, handler_class=WebSocketHandler)
         http_server.serve_forever()
 
 def main():
@@ -40,9 +52,8 @@ def main():
     parser = argparse.ArgumentParser(description='Tool to stream GCODE to a GRBL driver machine.')
     parser.add_argument('-v', '--verbose', action="store_true", help='Verbose output, Show more informations')
     parser.add_argument('-q', '--quiet', action="store_true", help='Force no output,even if verbose mode is active')
-    parser.add_argument('-b', '--buffered', action="store_true", help='Force no output,even if verbose mode is active')
     parser.add_argument('-d', '--device', nargs='?', default=None, help='Serila device to be used. If none defined, it will try to find it automaticaly.')
-    parser.add_argument('--bitrate', nargs='?', default=9600, help='Serial device to be used. If none defined, it will try to find it automaticaly.')
+    parser.add_argument('--bitrate', nargs='?', default=None, help='Serial device to be used. If none defined, it will try to find it automaticaly.')
     parser.add_argument('--gui', action="store_true", help='Start grbl tool with  a graphical user interface an not a console interface.')
     parser.add_argument('-s', '--stream', nargs='?', type=argparse.FileType('r'), default=None, help='Input file to be parsed, if not specified tool will be launch as a manual command line interface')
     try :
@@ -65,16 +76,19 @@ def start_cli():
         readline.read_history_file(os.path.join(pathname, ".history"))
 
     # Initialize
-    grbl = Grbl(args.device, args.bitrate, args.buffered)
+    print Color.STRONG + cli_startup + Color.RESET
+    grbl = Grbl(args.device, args.bitrate)
     macro = lib.macros.Macro(grbl)
     macro.connect(args.device, args.bitrate)
     try :
         if(args.stream == None):
             while True:
                 line = raw_input(" ~ ")
-                if (not grbl.processCommand(macro, line)):
+                if(line.strip().upper() == "EXIT"):
                     info("Exiting ...")
                     break;
+                else:
+                    grbl.processCommand(macro, line)
         else:
             comment("Start Streaming")
             grbl.stream(args.stream)

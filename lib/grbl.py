@@ -8,8 +8,10 @@ import threading
 from Queue import Queue
 from time import sleep
 from parse import parse
-from compiler.pycodegen import EXCEPT
 from serial.serialutil import SerialException
+import events
+
+STATUS_MOTIF = '<{status},MPos:{machine.x:g},{machine.y:g},{machine.z:g},WPos:{work.x:g},{work.y:g},{work.z:g}>'
 
 
 class GrblSerialReader(threading.Thread):
@@ -19,28 +21,38 @@ class GrblSerialReader(threading.Thread):
         self.daemon = True
         self.start()
 
+    def storeStatus(self, status):
+        if self.grbl.status != status:
+            events.trigger("status", status)
+        self.grbl.status = status
+
     def sendOutput(self, output):
         if(output.get('status', '') == 'ok' and output.get('text', []) and output.get('text')[0]):
-            if(output['text'][0][0] == '<' and output['text'][0][-1] == '>'):
-                status = output['text'][0]
-                self.grbl.status = parse('<{status},MPos:{machine.x:g},{machine.y:g},{machine.z:g},WPos:{work.x:g},{work.y:g},{work.z:g}>', status).named
+            grbl_status = parse(STATUS_MOTIF, output['text'][0])
+            if grbl_status != None:
+                self.storeStatus(grbl_status.named)
                 return
         self.grbl.command_output_queue.put(output)
 
     def run(self):
-        output = {'status': "ok", 'text': []}
-        while True:
-            tmp = self.grbl.serial.readline().strip()
-            if(tmp[:5] in ('ok', 'error')):
-                if(tmp == 'ok'):
-                    output['status'] = tmp
+        try:
+            output = {'status': "ok", 'text': []}
+            while True:
+                if(not self.grbl.serial):
+                    return
+                tmp = self.grbl.serial.readline().strip()
+                if(tmp[:5] in ('ok', 'error')):
+                    if(tmp == 'ok'):
+                        output['status'] = tmp
+                    else:
+                        output['status'] = 'error'
+                        output['text'].append(tmp)
+                    self.sendOutput(output)
+                    output = {'status': "ok", 'text': []}
                 else:
-                    output['status'] = 'error'
                     output['text'].append(tmp)
-                self.sendOutput(output)
-                output = {'status': "ok", 'text': []}
-            else:
-                output['text'].append(tmp)
+        except SerialException as e:
+            self.grbl._serial_error(e)
 
 
 class GrblStatusManager(threading.Thread):
@@ -51,23 +63,30 @@ class GrblStatusManager(threading.Thread):
         self.start()
 
     def run(self):
-        while True:
-            if(self.grbl.status.get('status', None) != 'Idle' or self.grbl.running):
-                if(self.grbl.status.get('status', None) == 'Idle'):
-                    self.grbl.running = False
-                self.grbl.serial.write('?\n')
-            sleep(0.2)
+        try:
+            while True:
+                if(self.grbl.status.get('status', None) != 'Idle' or self.grbl.running):
+                    if(self.grbl.status.get('status', None) == 'Idle'):
+                        self.grbl.running = False
+                    if self.grbl.serial:
+                        self.grbl.serial.write('?\n')
+                    else:
+                        return
+                sleep(0.2)
+        except SerialException as e:
+            self.grbl._serial_error(e)
 
 
 class Grbl:
     """ Class that wrap a serial connection to a grbl instance and allow to stream Gcode commande to GRBL CNC. """
 
-    def __init__(self, device, bitrate, buffered):
+    def __init__(self, device=None, bitrate=9600):
         self.serial = None
         self.bitrate = None
         self.default_bitrate = bitrate
         self.running = False
         self.status = {}
+        self.connected = False
 
         self.l_count = 0
         self.g_count = 0
@@ -78,6 +97,18 @@ class Grbl:
         self.zLimit = False
 
         self.command_output_queue = Queue()
+
+    def _serial_error(self, e):
+            warn("Serial communication error, you should reconnect : %s" % e)
+            events.trigger("serial.disconnected")
+            if(self.serial):
+                try:
+                    self.serial.close()
+                except SerialException:
+                    self.serial = None
+            self.serial = None
+            self.connected = False
+            self.status = {}
 
     def __initializeSerialPort(self, dev, bitrate):
         """Try to initalise a Serial connection to the specified device. Return the  device if we are connected to a valid Grbl device, None otherwise. """
@@ -147,13 +178,16 @@ class Grbl:
                     else:
                         self.serial = self.__initializeSerialPort(dev, self.default_bitrate)
                     if (self.serial != None):
+                        self.connected = True
                         break
         if(self.serial == None):
             warn("Unable to connect to a Grbl device")
+            events.trigger("serial.disconnected")
             return False
         else:
             self.serial_reader = GrblSerialReader(self)
             self.serial_status_manager = GrblStatusManager(self)
+            events.trigger("serial.connected", {"port": self.serial.getPort(), "bitrate": self.bitrate})
             return True
 
     def _limitZSpeed(self, line):
@@ -189,6 +223,7 @@ class Grbl:
             else:
                 for txt in output.get('text', []):
                     warn(txt)
+            return output
         else:
             warn("Not connected to GRBL board.")
 
@@ -211,7 +246,7 @@ class Grbl:
     def streamLine(self, line):
         self.running = True
         if(not self.isComment(line.strip())):
-            self.sendLine(line)
+            return self.sendLine(line)
         elif(len(line.strip()) > 0):
             comment(line.strip())
 
@@ -219,27 +254,24 @@ class Grbl:
         try:
             strCmd = strCmd.strip()
             cmdSplit = strCmd.split(" ")
-            if strCmd.upper() == "EXIT":
-                return False
-            elif(hasattr(macro, cmdSplit[0])):
+            if(hasattr(macro, cmdSplit[0])):
                 debug("Command found")
                 args = cmdSplit[1:]
                 try:
-                    getattr(macro, cmdSplit[0])(*args)
+                    return getattr(macro, cmdSplit[0])(*args)
                 except TypeError, e:
                     warn("Error  :%s" % e)
             elif(hasattr(macro, macro._alias.get(cmdSplit[0], ""))):
                 debug("Command found")
                 args = cmdSplit[1:]
                 try:
-                    getattr(macro, macro._alias.get(cmdSplit[0], ""))(*args)
+                    return getattr(macro, macro._alias.get(cmdSplit[0], ""))(*args)
                 except TypeError, e:
                     warn("Error  :%s" % e)
             elif (not self.isComment(strCmd)):
-                self.streamLine(strCmd)
+                return self.streamLine(strCmd)
         except SerialException as e:
-            warn("Not executed, Serial connection error %s", e)
-        return True
+            self._serial_error(e)
 
     def close(self):
         if(self.serial):

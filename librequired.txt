@@ -4,3 +4,4 @@ parse
 flask
 gevent
 gevent-websocket
+simplejson

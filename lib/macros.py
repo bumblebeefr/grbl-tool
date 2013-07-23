@@ -4,19 +4,6 @@ import os
 import sys
 
 
-cmd_startup = """
-=================== Command line mode ===================
-
-You can manually send commands to grbl that can be :
- - '$' to show current grbl settings
- - '$x=value' to set a parameter
- - 'exit' to exit this tool
- - 'help' to show more help
-
-=========================================================
-"""
-
-
 class Macro:
     def __init__(self, grbl):
         self._grbl = grbl
@@ -74,7 +61,7 @@ class Macro:
         if(bitrate):
             bitrate = int(bitrate)
         if(self._grbl.connect(dev, bitrate)):
-            print Color.STRONG + cmd_startup + Color.RESET
+            info("Connection initilized")
 
     def ls(self):
         """List .ngc files to stream from the gcode filder."""
