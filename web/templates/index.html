@@ -2,12 +2,34 @@
 	<head>
 		<title>SVG XY Controls</title>
 		{% include 'pad-css.html' %}
+		
+	    <link href='http://fonts.googleapis.com/css?family=Source+Code+Pro' rel='stylesheet' type='text/css'>
+	    <link rel="stylesheet" href="http://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css">		
 		<link rel="stylesheet" media="all" href="{{ url_for('static', filename='css/grbl-gui.css')}}" />
 	</head>
 	<body id="body" style="min-width:640px;min-height:480px;" >
 		<div id="pad">
 		{% include 'pad-svg.html' %}
 		</div>
+		
+		<div id="container">
+			<div id="shell-panel">
+				  <div id="shell-view"></div>
+			</div>
+		</div>
+		
+		
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
+	    <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
+	    <script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.2/underscore-min.js"></script>
+	    <script>Josh = {Debug: true };</script>
+	    <script type="text/javascript" src="{{ url_for('static', filename='js/history.js')}}"></script>
+	    <script type="text/javascript" src="{{ url_for('static', filename='js/killring.js')}}"></script>
+	    <script type="text/javascript" src="{{ url_for('static', filename='js/readline.js')}}"></script>
+	    <script type="text/javascript" src="{{ url_for('static', filename='js/shell.js')}}"></script>
+	    <script type="text/javascript" src="{{ url_for('static', filename='js/pathhandler.js')}}"></script>
+	    <script type="text/javascript" src="{{ url_for('static', filename='js/cli.js')}}"></script>
+		
 		<script type="text/javascript" src="{{ url_for('static', filename='js/grbl/event-manager.js')}}"></script>
 		<script type="text/javascript" src="{{ url_for('static', filename='js/grbl/web-socket.js')}}"></script>
 	</body>

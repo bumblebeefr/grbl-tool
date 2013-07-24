@@ -1,10 +1,10 @@
 var EventManager  = {
     _findHandler : function(arr_property,obj){
         var key = arr_property.shift();
-        if(arr_property.length == 0 && typeof obj[key] == 'function'){
+        if((arr_property.length == 0) && (typeof obj[key] == 'function')){
             return obj[key];
         }
-        if(arr_property.length > 0 && typeof obj[key] == 'object'){
+        if((arr_property.length > 0) && (typeof obj[key] == 'object')){
             return EventManager._findHandler(arr_property,obj[key]);
         }else{
             return function(){};
@@ -19,14 +19,14 @@ var EventManager  = {
     },
     console : {
         info : function(data){
-            console.info("info",data.message);
+        	shell.log("info",data.message);
         },
         debug : function(data){
-            console.info("debug",data.message);
+        	shell.log("debug",data.message);
         },
         warn : function(data){
-            console.warn("warning",data.message);
+        	shell.log("warn",data.message);
         }
     }
-    
+
 }

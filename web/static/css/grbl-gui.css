@@ -1,10 +1,52 @@
-	html{
-		margin:0px;
-		padding:0px;
-	}
-	body {
-		margin:0px;
-		padding:0px;
-		height: 100%;
-		width: 100%;
-	}
+html {
+	margin: 0px;
+	padding: 0px;
+}
+
+body {
+	margin: 0px;
+	padding: 0px;
+	height: 100%;
+	width: 100%;
+}
+
+#pad{
+	width:500px;
+	float:left;
+}
+#container {
+	padding-bottom: 2em;
+	position: relative;
+	background-color: #000;
+	margin-left:520px;
+}
+
+#shell-panel {
+	height: 400px;
+	opacity: 0.9;
+	background-color: #002f05;
+	color: #00fe00;
+	padding: 20px 20px 20px 20px;
+	z-index: 1000;
+	font-family: 'Source Code Pro', sans-serif;
+	font-size: 0.9em;
+	overflow: scroll;
+	overflow-x: hidden;
+	overflow-y: scroll;
+}
+
+#shell-cli {
+	position: absolute;
+	bottom: 0.5em;
+}
+
+#shell-view .info{
+	color:#CCCCCC;
+}
+
+#shell-view .debug{
+	color:#888888;
+}
+#shell-view .warn{
+	color:#AA0000;
+}
