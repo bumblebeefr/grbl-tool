@@ -3,50 +3,101 @@ html {
 	padding: 0px;
 }
 
+body,body * {
+	font-size: 9pt;
+}
+
 body {
 	margin: 0px;
 	padding: 0px;
-	height: 100%;
+	width: 100%;
+	font-family: Arial, Helvetica, sans-serif;
+	oveflow:hidden;
+}
+
+
+#main-container {
+	margin-top: 41px;
+	padding-right: 0px
+}
+
+#pad {
+	width: 400px;
+	height:380px;
+	float: left;
+	clear: left;
+	overflow:hidden;
+}
+
+#status {
+	width: 400px;
+	float: left;
+}
+
+#status table {
 	width: 100%;
 }
 
-#pad{
-	width:500px;
-	float:left;
+#status td {
+	text-align: right;
 }
+
 #container {
-	padding-bottom: 2em;
+	padding-bottom: 2em; 
 	position: relative;
-	background-color: #000;
-	margin-left:520px;
+	background-color: #101010;
+	margin-left: 400px;
 }
 
 #shell-panel {
 	height: 400px;
 	opacity: 0.9;
-	background-color: #002f05;
-	color: #00fe00;
+	background-color: #363636;
+	box-shadow:4px 4px 10px #242424 inset;
+	color: #dddddd;
 	padding: 20px 20px 20px 20px;
 	z-index: 1000;
-	font-family: 'Source Code Pro', sans-serif;
-	font-size: 0.9em;
+	font-family: 'pt_monoregular', monospace, sans-serif;
+	font-size: 9pt;
 	overflow: scroll;
 	overflow-x: hidden;
 	overflow-y: scroll;
 }
 
-#shell-cli {
+ #shell-cli {
 	position: absolute;
 	bottom: 0.5em;
+} 
+#shell-view .info {
+	color: #CCCCCC;
 }
 
-#shell-view .info{
-	color:#CCCCCC;
+#shell-view .debug {
+	color: #888888;
 }
 
-#shell-view .debug{
-	color:#888888;
+#shell-view .warn {
+	color: #AA0000;
 }
-#shell-view .warn{
-	color:#AA0000;
+
+#shell-view .grbl-input {
+	color: #666666;
+}
+
+#shell-view .grbl-input:before {
+	content: ">>> ";
+}
+
+#shell-view .grbl-output {
+	color: #008833;
+}
+
+#shell-view .grbl-output:before {
+	content: "<<< ";
+}
+
+
+#connection-form input{
+	margin-right:0.5em;
+	margin-left:3em;
 }

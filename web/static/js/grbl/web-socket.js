@@ -17,7 +17,7 @@ var WS = {
                     if(message.type){
                     	EventManager._handleEvent(message.type,message.data);
                     }
-                    
+
                     WS.set_active(true);
                 };
                 WS.ws.onclose = function() {

@@ -44,7 +44,7 @@ class Macro:
             try:
                 self._grbl.stream(f, "debug" in args)
             except KeyboardInterrupt:
-                print
+                info("")
                 warn("Streaming interrupted. Grbl connection will be reset to stop current processing Job")
                 self._grbl.resetConnection()
             f.close()
@@ -63,12 +63,20 @@ class Macro:
         if(self._grbl.connect(dev, bitrate)):
             info("Connection initilized")
 
+    def disconnect(self):
+        """Close the current serial connection to GRBL"""
+        self._grbl.close()
+
+    def reset(self):
+        """Reset the current serial connection to GRBL"""
+        self._grbl.resetConnection()
+
     def ls(self):
         """List .ngc files to stream from the gcode filder."""
         pathname = os.path.dirname(sys.argv[0])  # current script's path
         for f in os.listdir("%s/gcode/" % pathname):
             if(f.upper().endswith(".NGC")):
-                print(f)
+                info(f)
 
     def clear(self):
         """Clear console"""
@@ -76,14 +84,14 @@ class Macro:
 
     def status(self):
         """Show grbl status and position. Same as the ? grbl internal command"""
-        print(self._grbl.status)
+        info(self._grbl.status)
 
     def help(self, cmd=None):
         """Show this help"""
         if(cmd in dir(self)):
-            print(getattr(self, cmd).__doc__)
+            info(getattr(self, cmd).__doc__)
         else:
-            print"""
+            info("""
 You can manually send commands to grbl that can be:
  - A regular GCODE command such as:
         G0/G00     Switch to rapid linear motion mode (seek)
@@ -104,7 +112,7 @@ You can manually send commands to grbl that can be:
         G93     Set inverse time feed rate mode
         G94     Set units per minute feed rate mode
  - '$':  show current grbl HELP
- - 'exit': exit this tool"""
+ - 'exit': exit this tool""")
             for m in dir(self):
                 if(not m.startswith("_")):
-                    print(" - %s: %s" % (m, getattr(self, m).__doc__))
+                    info(" - %s: %s" % (m, getattr(self, m).__doc__))

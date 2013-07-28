@@ -3,33 +3,109 @@
 		<title>SVG XY Controls</title>
 		{% include 'pad-css.html' %}
 		
-	    <link href='http://fonts.googleapis.com/css?family=Source+Code+Pro' rel='stylesheet' type='text/css'>
-	    <link rel="stylesheet" href="http://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css">		
-		<link rel="stylesheet" media="all" href="{{ url_for('static', filename='css/grbl-gui.css')}}" />
+		<link rel="stylesheet" media="screen" href="{{ url_for('static', filename='bootstrap/css/bootstrap.css')}}" />
+		<link rel="stylesheet" media="screen" href="{{ url_for('static', filename='fonts/stylesheet.css')}}" />
+		<link rel="stylesheet" media="screen" href="{{ url_for('static', filename='css/grbl-gui.css')}}" />
 	</head>
 	<body id="body" style="min-width:640px;min-height:480px;" >
-		<div id="pad">
-		{% include 'pad-svg.html' %}
-		</div>
-		
-		<div id="container">
-			<div id="shell-panel">
-				  <div id="shell-view"></div>
+	    <div class="navbar navbar-inverse navbar-fixed-top">
+	      <div class="navbar-inner">
+	        <div class="container-fluid">
+	          <a class="brand" href="#">Grbl-tool GUI</a>
+	          <div class="nav-collapse collapse">
+	            <ul class="nav">
+	              <li class="dropdown" id="menu-connect">
+	                <a data-hover="dropdown" class="dropdown-toggle btn-auto-connect" href="#"> Connect <b class="caret"></b></a>
+	                <ul class="dropdown-menu">
+	                  <li>
+	                  	<a href="#" class="btn-auto-connect">Auto Connect</a>
+	                  </li>
+	                  <!-- <li class="separator"> </li>
+	                  <li>
+	                  	<a href="#" id="btn-manual-connect">Manuel Connection</a>
+		                <form id="connection-form">
+		                  	<input type="text" id="connection-device" placeholder="device/port"/>
+		                  	<input type="text" id="connection-bitrate" placeholder="bitrate"/>
+	                  	</form>
+	                  </li> -->
+	                </ul>
+	              </li>
+	              <li class="dropdown" id="menu-disconnect" style="display:none;">
+	                <a data-hover="dropdown" class="dropdown-toggle btn-disconnect" href="#">Disconnect <b class="caret"></b></a>
+	                <ul class="dropdown-menu">
+	                  <li><a href="#" class="btn-disconnect">Disconnect</a></li>
+	                  <li><a href="#">Reset</a></li>
+	                </ul>
+	              </li>
+	            </ul>
+	          </div><!--/.nav-collapse -->
+	        </div>
+	      </div>
+	    </div>
+	    
+
+    	<div id="main-container" class="container-fluid">
+			<div class="row-fluid">
+				<div class="col4">
+				<div id="status">
+					    <dl class="dl-horizontal">
+					    <dt>Connection : </dt>
+					    <dd id="serial-connected">Disconnected</dd>
+					    <dt>State : </dt>
+					    <dd id="status-state">Disconnected</dd>
+				    </dl>
+					<table  class="table table-condensed">
+						<thead>
+							<tr>
+								<th>&nbsp</th>
+								<th>X Axis</th>
+								<th>Y axis</th>
+								<th>Z axis</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<th>Machine</th>
+								<td id="machine-x">0</td>
+								<td id="machine-y">0</td>
+								<td id="machine-z">0</td>
+							</tr>
+							<tr>
+								<th>Work</th>
+								<td id="work-x">0</td>
+								<td id="work-y">0</td>
+								<td id="work-z">0</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<div id="pad">
+				{% include 'pad-svg.html' %}
+				</div>
+				
+				<div id="container">
+					<div id="shell-panel">
+						  <div id="shell-view"></div>
+					</div>
+				</div>
 			</div>
 		</div>
 		
-		
-		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
-	    <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
-	    <script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.2/underscore-min.js"></script>
-	    <script>Josh = {Debug: true };</script>
+		<script type="text/javascript"  src="{{ url_for('static', filename='js/jquery.min.js')}}"></script>
+		<script type="text/javascript"  src="{{ url_for('static', filename='bootstrap/js/bootstrap.min.js')}}"></script>
+		<script type="text/javascript"  src="{{ url_for('static', filename='bootstrap/js/twitter-bootstrap-hover-dropdown.js')}}"></script>
+	    <script type="text/javascript"  src="{{ url_for('static', filename='js/underscore-min.js')}}"></script>
+	    <script type="text/javascript"  src="{{ url_for('static', filename='js/numeral/numeral.min.js')}}"></script>
+	    
 	    <script type="text/javascript" src="{{ url_for('static', filename='js/history.js')}}"></script>
 	    <script type="text/javascript" src="{{ url_for('static', filename='js/killring.js')}}"></script>
 	    <script type="text/javascript" src="{{ url_for('static', filename='js/readline.js')}}"></script>
 	    <script type="text/javascript" src="{{ url_for('static', filename='js/shell.js')}}"></script>
 	    <script type="text/javascript" src="{{ url_for('static', filename='js/pathhandler.js')}}"></script>
-	    <script type="text/javascript" src="{{ url_for('static', filename='js/cli.js')}}"></script>
-		
+	    
+	    <script type="text/javascript" src="{{ url_for('static', filename='js/grbl/cli.js')}}"></script>
+	    <script type="text/javascript" src="{{ url_for('static', filename='js/grbl/grbl.js')}}"></script>
+		<script type="text/javascript" src="{{ url_for('static', filename='js/grbl/ui-events.js')}}"></script>
 		<script type="text/javascript" src="{{ url_for('static', filename='js/grbl/event-manager.js')}}"></script>
 		<script type="text/javascript" src="{{ url_for('static', filename='js/grbl/web-socket.js')}}"></script>
 	</body>

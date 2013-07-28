@@ -19,12 +19,9 @@ macros = Macro(grbl)
 
 def webapp(environ, start_response):
     path = environ["PATH_INFO"]
-    # pprint(environ)
     if path == "/websocket":
         with app.request_context(environ):
-            user_id = None
-            user_id = session.get('user_id', None)
-            handle_websocket(environ["wsgi.websocket"], user_id)
+            handle_websocket(environ["wsgi.websocket"], grbl)
     else:
         return app(environ, start_response)
 

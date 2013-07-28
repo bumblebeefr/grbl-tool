@@ -33,8 +33,11 @@ class WSQueueConsumer(threading.Thread):
 def handle_websocket(ws, grbl):
     global _connected
     if("ws" in _ws):
-        ws.send(json.dumps({"welcome": False}))
+        ws.send(json.dumps({"error": "Already connected"}))
     else:
+        grbl.trigger_connection()
+        grbl.trigger_status()
+
         ws.send(json.dumps({"welcome": True}))
         _ws['ws'] = ws
         while True:
@@ -48,7 +51,6 @@ def handle_websocket(ws, grbl):
 
 class WsEventListener:
     def processEvent(self, event_type, event_dict):
-        print(event_type)
         _message_queue.put({"type": event_type, "data": event_dict})
 
 wsEventListener = WsEventListener()

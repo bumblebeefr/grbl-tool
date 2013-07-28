@@ -19,35 +19,35 @@ class _color:
 
 def info(s):
     # if (not args.quiet):
-        events.trigger("console.info", {"message": s})
+        events.trigger("console.info", {"message": str(s)})
         print("%s=== %s%s" % (_color.STRONG, s, _color.RESET))
 
 
 def log_in(s):
     # if (not args.quiet):
-        events.trigger("grbl.input", {"message": s})
+        events.trigger("grbl.output", {"message": str(s)})
         print("%s<<< %s%s" % (_color.CYAN, s, _color.RESET))
 
 
 def log_out(s):
     # if (not args.quiet):
-        events.trigger("grbl.output", {"message": s})
+        events.trigger("grbl.input", {"message": str(s)})
         print("%s>>> %s%s" % (_color.GREEN, s, _color.RESET))
 
 
 def comment(s):
     # if (not args.quiet):
-        events.trigger("console.comment", {"message": s})
+        events.trigger("console.comment", {"message": str(s)})
         print("%s### %s%s" % (_color.STRONG + _color.BLACK, s, _color.RESET))
 
 
 def debug(s):
     # if(args.verbose and not args.quiet):
-        events.trigger("console.debug", {"message": s})
+        events.trigger("console.debug", {"message": str(s)})
         print("%s!!! %s%s" % (_color.MAGENTA, s, _color.RESET))
 
 
 def warn(s):
     # if (not args.quiet):
-        events.trigger("console.warn", {"message": s})
+        events.trigger("console.warn", {"message": str(s)})
         print("%s/!\ %s%s" % (_color.YELLOW, s, _color.RESET))

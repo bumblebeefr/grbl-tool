@@ -23,8 +23,14 @@ class GrblSerialReader(threading.Thread):
 
     def storeStatus(self, status):
         if self.grbl.status != status:
-            events.trigger("status", status)
+            self.grbl.trigger_status()
         self.grbl.status = status
+
+    def storeGcodeStatus(self, status):
+        status = status.split(" ")
+        if self.grbl.gcode_status != status:
+            self.grbl.trigger_gcode_status()
+        self.grbl.gcode_status = status
 
     def sendOutput(self, output):
         if(output.get('status', '') == 'ok' and output.get('text', []) and output.get('text')[0]):
@@ -32,6 +38,11 @@ class GrblSerialReader(threading.Thread):
             if grbl_status != None:
                 self.storeStatus(grbl_status.named)
                 return
+
+            if(len(output['text'][0]) > 2 and output['text'][0][0] == "[" and output['text'][0][-1] == "]"):
+                self.storeGcodeStatus(output['text'][0][1:-1])
+                return
+
         self.grbl.command_output_queue.put(output)
 
     def run(self):
@@ -70,6 +81,7 @@ class GrblStatusManager(threading.Thread):
                         self.grbl.running = False
                     if self.grbl.serial:
                         self.grbl.serial.write('?\n')
+                        self.grbl.serial.write('$G\n')
                     else:
                         return
                 sleep(0.2)
@@ -86,6 +98,7 @@ class Grbl:
         self.default_bitrate = bitrate
         self.running = False
         self.status = {}
+        self.gcode_status = []
         self.connected = False
 
         self.l_count = 0
@@ -98,9 +111,21 @@ class Grbl:
 
         self.command_output_queue = Queue()
 
+    def trigger_connection(self):
+        if(self.serial):
+            events.trigger("serial.connected", {"port": self.serial.getPort(), "bitrate": self.bitrate})
+        else:
+            events.trigger("serial.disconnected")
+
+    def trigger_status(self):
+        events.trigger("status", self.status)
+
+    def trigger_gcode_status(self):
+        events.trigger("gcode.status", self.gcode_status)
+
     def _serial_error(self, e):
             warn("Serial communication error, you should reconnect : %s" % e)
-            events.trigger("serial.disconnected")
+            self.trigger_connection()
             if(self.serial):
                 try:
                     self.serial.close()
@@ -182,12 +207,13 @@ class Grbl:
                         break
         if(self.serial == None):
             warn("Unable to connect to a Grbl device")
-            events.trigger("serial.disconnected")
+            self.trigger_connection()
             return False
         else:
             self.serial_reader = GrblSerialReader(self)
             self.serial_status_manager = GrblStatusManager(self)
-            events.trigger("serial.connected", {"port": self.serial.getPort(), "bitrate": self.bitrate})
+            self.trigger_connection()
+            self.trigger_status()
             return True
 
     def _limitZSpeed(self, line):
@@ -255,7 +281,6 @@ class Grbl:
             strCmd = strCmd.strip()
             cmdSplit = strCmd.split(" ")
             if(hasattr(macro, cmdSplit[0])):
-                debug("Command found")
                 args = cmdSplit[1:]
                 try:
                     return getattr(macro, cmdSplit[0])(*args)
@@ -276,6 +301,9 @@ class Grbl:
     def close(self):
         if(self.serial):
             self.serial.close()
+            self.serial = None
+            info("Disconnected")
+        self.trigger_connection()
 
     def resetConnection(self):
         if(self.serial):
@@ -284,5 +312,9 @@ class Grbl:
             self.serial.open()
             time.sleep(2)
             self.serial.flushInput()
+            info("Connection reset")
         else:
             warn("Not connected to GRBL board.")
+        self.trigger_connection()
+
+
