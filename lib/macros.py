@@ -31,13 +31,12 @@ class Macro:
      - 'debug':  stream the file step by step
      - 'limit':  try add a Z feed rate limitation
      - 'buffered': use buffered mode to stream the file"""
-        pathname = os.path.dirname(sys.argv[0])  # current script's path
         if("buffered" in args):
             self._grbl.buffered = True
         if("limit" in args):
             self._grbl.zLimit = True
         if(not filename.startswith("/")):
-            filename = os.path.abspath("%s/gcode/%s" % (pathname, filename))
+            filename = os.path.abspath("gcode/%s" % (filename))
         if(os.path.isfile(filename)):
             comment("Start streaming %s file" % filename)
             f = open(filename, 'r')
@@ -73,9 +72,8 @@ class Macro:
 
     def ls(self):
         """List .ngc files to stream from the gcode filder."""
-        pathname = os.path.dirname(sys.argv[0])  # current script's path
-        for f in os.listdir("%s/gcode/" % pathname):
-            if(f.upper().endswith(".NGC")):
+        for f in os.listdir("gcode"):
+            if(f.upper().endswith(".NGC") or f.upper().endswith(".GCODE")):
                 info(f)
 
     def clear(self):

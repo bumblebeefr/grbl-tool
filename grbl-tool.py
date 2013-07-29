@@ -79,7 +79,7 @@ def start_cli():
         readline.read_history_file(os.path.join(pathname, ".history"))
 
     # Initialize
-    print Color.STRONG + cli_startup + Color.RESET
+    print cli_startup
     grbl = Grbl(args.device, args.bitrate)
     macro = lib.macros.Macro(grbl)
     macro.connect(args.device, args.bitrate)
