@@ -2,7 +2,6 @@ var Grbl = {
 	send : function(command){
 		shell.disable();
 		$.ajax("/command.json", {
-			async : false,
 			data : {
 				cmd : command
 			},
