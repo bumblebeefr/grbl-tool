@@ -24,7 +24,7 @@ var Josh = Josh || {};
     var _cursor = config.cursor || 0;
     var _searchCursor = _cursor;
     var _lastSearchTerm = '';
-    var _storage = null;// config.storage || root.localStorage;
+    var _storage =  config.storage || root.localStorage;
     var _key = config.key || 'josh.history';
 
     if (_storage) {
