@@ -56,22 +56,33 @@ def main():
     parser.add_argument('-d', '--device', nargs='?', default=None, help='Serila device to be used. If none defined, it will try to find it automaticaly.')
     parser.add_argument('--bitrate', nargs='?', default=None, help='Serial device to be used. If none defined, it will try to find it automaticaly.')
     parser.add_argument('--gui', action="store_true", help='Start grbl tool with  a graphical user interface an not a console interface.')
+    parser.add_argument('--debug', action="store_true", help='Start grbl tool with  a graphical user interface an not a console interface.')
     parser.add_argument('-s', '--stream', nargs='?', type=argparse.FileType('r'), default=None, help='Input file to be parsed, if not specified tool will be launch as a manual command line interface')
     try :
         args = parser.parse_args()
     except IOError :
         sys.exit(0)
     if args.gui :
-        start_gui()
+        if args.debug :
+            print "starting GUI in debug mode"
+            start_debug_gui()
+        else:
+            print "starting GUI"
+            start_gui()
     else:
         start_cli()
 
-def start_gui():
+def start_debug_gui():
     WebApp()
     webbrowser.get('firefox').open("http://localhost:8000/")
-    line = raw_input(" exit ")
+    line = raw_input("Enter to exit ")
     # os.system("firefox -app firefox-app/application.ini -jsconsole")
 
+
+
+def start_gui():
+    WebApp()
+    os.system("firefox -app firefox-app/application.ini")
 
 def start_cli():
     pathname = os.path.dirname(sys.argv[0])  # current script's path
