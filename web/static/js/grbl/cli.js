@@ -30,38 +30,12 @@ var shell = Josh.Shell({
 	prompt : "$"
 });
 
-// Create a the command `killring` which will display all text currently in the
-// `KillRing`, by attaching
-// a handler to the `Shell`.
-shell.setCommandHandler("e", {
-
-	// We don't implement any completion for the `killring` command, so we only
-	// provide an `exec` handler, and no `completion` handler.
-	exec : function(cmd, args, callback) {
-		var command = args.join(" ");
-		callback();
-		$.ajax("/command.json", {
-			async : false,
-			data : {
-				cmd : command
-			},
-			success : function(data) {
-				console.debug(command, "ok", data);
-			},
-			error : function() {
-				console.error(command, "ko");
-			}
-		});
-
-	}
-});
-
 /* override default command handler */
 shell.setCommandHandler("_default", {
 	exec : function(cmd, args, callback) {
 		var command = cmd;
 		if (args.length > 0) {
-			command += args.join(" ");
+			command += " "+args.join(" ");
 		}
 		callback();
 		Grbl.send(command);
