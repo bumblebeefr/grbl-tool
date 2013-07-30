@@ -3,11 +3,11 @@
 		<title>SVG XY Controls</title>
 		{% include 'pad-css.html' %}
 		
-		<link rel="stylesheet" media="screen" href="{{ url_for('static', filename='bootstrap/css/bootstrap.css')}}" />
-		<link rel="stylesheet" media="screen" href="{{ url_for('static', filename='fonts/stylesheet.css')}}" />
-		<link rel="stylesheet" media="screen" href="{{ url_for('static', filename='css/grbl-gui.css')}}" />
+		<link rel="stylesheet" media="screen" href="{{ url_for('static', filename='bootstrap/css/bootstrap.css')}}?v={{v}}" />
+		<link rel="stylesheet" media="screen" href="{{ url_for('static', filename='fonts/stylesheet.css')}}?v={{v}}?v={{v}}" />
+		<link rel="stylesheet" media="screen" href="{{ url_for('static', filename='css/grbl-gui.css')}}?v={{v}}" />
 	</head>
-	<body id="body" style="min-width:640px;min-height:480px;" >
+	<body id="body"  >
 	    <div class="navbar navbar-inverse navbar-fixed-top">
 	      <div class="navbar-inner">
 	        <div class="container-fluid">
@@ -91,22 +91,21 @@
 			</div>
 		</div>
 		
-		<script type="text/javascript"  src="{{ url_for('static', filename='js/jquery.min.js')}}"></script>
-		<script type="text/javascript"  src="{{ url_for('static', filename='bootstrap/js/bootstrap.min.js')}}"></script>
-		<script type="text/javascript"  src="{{ url_for('static', filename='bootstrap/js/twitter-bootstrap-hover-dropdown.js')}}"></script>
-	    <script type="text/javascript"  src="{{ url_for('static', filename='js/underscore-min.js')}}"></script>
-	    <script type="text/javascript"  src="{{ url_for('static', filename='js/numeral/numeral.min.js')}}"></script>
+		<script type="text/javascript"  src="{{ url_for('static', filename='js/jquery.min.js')}}?v={{v}}"></script>
+		<script type="text/javascript"  src="{{ url_for('static', filename='bootstrap/js/bootstrap.min.js')}}?v={{v}}"></script>
+		<script type="text/javascript"  src="{{ url_for('static', filename='bootstrap/js/twitter-bootstrap-hover-dropdown.js')}}?v={{v}}"></script>
+	    <script type="text/javascript"  src="{{ url_for('static', filename='js/underscore-min.js')}}?v={{v}}"></script>
+	    <script type="text/javascript"  src="{{ url_for('static', filename='js/numeral/numeral.min.js')}}?v={{v}}"></script>
 	    
-	    <script type="text/javascript" src="{{ url_for('static', filename='js/history.js')}}"></script>
-	    <script type="text/javascript" src="{{ url_for('static', filename='js/killring.js')}}"></script>
-	    <script type="text/javascript" src="{{ url_for('static', filename='js/readline.js')}}"></script>
-	    <script type="text/javascript" src="{{ url_for('static', filename='js/shell.js')}}"></script>
-	    <script type="text/javascript" src="{{ url_for('static', filename='js/pathhandler.js')}}"></script>
+	    <script type="text/javascript" src="{{ url_for('static', filename='js/josh/history.js')}}?v={{v}}"></script>
+ 	    <script type="text/javascript" src="{{ url_for('static', filename='js/josh/killring.js')}}?v={{v}}"></script> 
+	    <script type="text/javascript" src="{{ url_for('static', filename='js/josh/readline.js')}}?v={{v}}"></script>
+	    <script type="text/javascript" src="{{ url_for('static', filename='js/josh/shell.js')}}?v={{v}}"></script>
 	    
-	    <script type="text/javascript" src="{{ url_for('static', filename='js/grbl/cli.js')}}"></script>
-	    <script type="text/javascript" src="{{ url_for('static', filename='js/grbl/grbl.js')}}"></script>
-		<script type="text/javascript" src="{{ url_for('static', filename='js/grbl/ui-events.js')}}"></script>
-		<script type="text/javascript" src="{{ url_for('static', filename='js/grbl/event-manager.js')}}"></script>
-		<script type="text/javascript" src="{{ url_for('static', filename='js/grbl/web-socket.js')}}"></script>
+	    <script type="text/javascript" src="{{ url_for('static', filename='js/grbl/cli.js')}}?v={{v}}"></script>
+	    <script type="text/javascript" src="{{ url_for('static', filename='js/grbl/grbl.js')}}?v={{v}}"></script>
+		<script type="text/javascript" src="{{ url_for('static', filename='js/grbl/ui-events.js')}}?v={{v}}"></script>
+		<script type="text/javascript" src="{{ url_for('static', filename='js/grbl/event-manager.js')}}?v={{v}}"></script>
+		<script type="text/javascript" src="{{ url_for('static', filename='js/grbl/web-socket.js')}}?v={{v}}"></script>
 	</body>
 </html>

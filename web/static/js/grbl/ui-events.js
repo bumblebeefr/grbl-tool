@@ -1,5 +1,6 @@
 function resize() {
-	$("#shell-panel").height($(window).height() - 40);
+	$("#shell-panel").height(window.innerHeight - 105);
+	$("body").height(window.innerHeight);
 };
 $(window).resize(resize);
 

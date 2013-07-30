@@ -1,6 +1,7 @@
 html {
 	margin: 0px;
 	padding: 0px;
+	oveflow: hidden;
 }
 
 body,body * {
@@ -16,7 +17,7 @@ body {
 }
 
 #main-container {
-	margin-top: 41px;
+	padding-top: 41px;
 	padding-right: 0px
 }
 
@@ -58,6 +59,7 @@ body {
 	z-index: 1000;
 	font-family: 'pt_monoregular', monospace, sans-serif;
 	font-size: 9pt;
+	font-weight:bold;
 	overflow: scroll;
 	overflow-x: hidden;
 	overflow-y: scroll;
@@ -65,7 +67,7 @@ body {
 
 #shell-cli {
 	position: absolute;
-	bottom: 0.5em;
+	bottom: 0.2em;
 }
 
 #shell-view {
@@ -81,11 +83,11 @@ body {
 }
 
 #shell-view .warn {
-	color: #AA0000;
+	color: #B94A48;
 }
 
 #shell-view .grbl-input {
-	color: #666666;
+	color: #888888;
 }
 
 #shell-view .grbl-input:before {
@@ -93,7 +95,7 @@ body {
 }
 
 #shell-view .grbl-output {
-	color: #008833;
+	color: #468847;
 }
 
 #shell-view .grbl-output:before {

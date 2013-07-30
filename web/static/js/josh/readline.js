@@ -152,7 +152,7 @@ Josh.Version = "0.2.7";
 
     function call(cmd) {
       _console.log('calling: ' + cmd.name + ', previous: ' + _lastCmd);
-      if(_inSearch && cmd.name != "cmdKeyPress" && cmd.name != "cmdReverseSearch") {
+      if(_inSearch && (cmd.name != "cmdKeyPress") && (cmd.name != "cmdReverseSearch")) {
         _inSearch = false;
         if(cmd.name == 'cmdEsc') {
           _searchMatch = null;
@@ -169,7 +169,7 @@ Josh.Version = "0.2.7";
           _onSearchEnd();
         }
       }
-      if(!_inSearch && _killring.isinkill() && cmd.name.substr(0, 7) != 'cmdKill') {
+      if(!_inSearch && _killring.isinkill() && (cmd.name.substr(0, 7) != 'cmdKill')) {
         _killring.commit();
       }
       _lastCmd = cmd.name;
@@ -494,13 +494,13 @@ Josh.Version = "0.2.7";
         return false;
       }
       var code = c.charCodeAt(0);
-      return (code >= 48 && code <= 57)
-        || (code >= 65 && code <= 90)
-        || (code >= 97 && code <= 122);
+      return ((code >= 48) && (code <= 57))
+        || ((code >= 65) && (code <= 90))
+        || ((code >= 97) && (code <= 122));
     }
 
     function remove(text, from, to) {
-      if(text.length <= 1 || text.length <= to - from) {
+      if((text.length <= 1) || (text.length <= to - from)) {
         return '';
       }
       if(from == 0) {
@@ -531,8 +531,14 @@ Josh.Version = "0.2.7";
       e = e || window.event;
 
       // return as unhandled if we're not active or the key is just a modifier key
-      if(!_active || e.keyCode == 16 || e.keyCode == 17 || e.keyCode == 18 || e.keyCode == 91) {
+      if(!_active || (e.keyCode == 16) || (e.keyCode == 17) || (e.keyCode == 18) || (e.keyCode == 91)) {
         return true;
+      }
+
+
+      //F1 - F12 key not catch
+      if((e.keyCode >= 112) && (e.keyCode <= 123)) {
+    	  return false;
       }
 
       var cmd = null;
@@ -650,6 +656,8 @@ Josh.Version = "0.2.7";
             break;
         }
       }
+
+
       if(!cmd) {
         return true;
       }
@@ -665,7 +673,7 @@ Josh.Version = "0.2.7";
         return true;
       }
       var key = getKeyInfo(e);
-      if(key.code == 0 || e.defaultPrevented) {
+      if((key.code == 0) || e.defaultPrevented) {
         return false;
       }
       queue(function cmdKeyPress() {
