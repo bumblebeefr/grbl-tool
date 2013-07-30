@@ -34,16 +34,18 @@ class GrblSerialReader(threading.Thread):
 
     def sendOutput(self, output):
         if(output.get('status', '') == 'ok' and output.get('text', []) and output.get('text')[0]):
-            grbl_status = parse(STATUS_MOTIF, output['text'][0])
-            if grbl_status != None:
-                self.storeStatus(grbl_status.named)
-                return
-
             if(len(output['text'][0]) > 2 and output['text'][0][0] == "[" and output['text'][0][-1] == "]"):
                 self.storeGcodeStatus(output['text'][0][1:-1])
                 return
 
         self.grbl.command_output_queue.put(output)
+
+    def manageGrblStatus(self, row):
+        grbl_status = parse(STATUS_MOTIF, row)
+        if grbl_status != None:
+            self.storeStatus(grbl_status.named)
+            return True
+        return False
 
     def run(self):
         try:
@@ -52,16 +54,17 @@ class GrblSerialReader(threading.Thread):
                 if(not self.grbl.serial):
                     return
                 tmp = self.grbl.serial.readline().strip()
-                if(tmp[:5] in ('ok', 'error')):
-                    if(tmp == 'ok'):
-                        output['status'] = tmp
+                if(not self.manageGrblStatus(tmp)):
+                    if(tmp[:5] in ('ok', 'error')):
+                        if(tmp == 'ok'):
+                            output['status'] = tmp
+                        else:
+                            output['status'] = 'error'
+                            output['text'].append(tmp)
+                        self.sendOutput(output)
+                        output = {'status': "ok", 'text': []}
                     else:
-                        output['status'] = 'error'
                         output['text'].append(tmp)
-                    self.sendOutput(output)
-                    output = {'status': "ok", 'text': []}
-                else:
-                    output['text'].append(tmp)
         except SerialException as e:
             self.grbl._serial_error(e)
 
@@ -80,11 +83,10 @@ class GrblStatusManager(threading.Thread):
                     if(self.grbl.status.get('status', None) == 'Idle'):
                         self.grbl.running = False
                     if self.grbl.serial:
-                        self.grbl.serial.write('?\n')
-                        self.grbl.serial.write('$G\n')
+                        self.grbl.runtimeCommand('?')
                     else:
                         return
-                sleep(0.2)
+                sleep(0.05)
         except SerialException as e:
             self.grbl._serial_error(e)
 
@@ -92,14 +94,20 @@ class GrblStatusManager(threading.Thread):
 class Grbl:
     """ Class that wrap a serial connection to a grbl instance and allow to stream Gcode commande to GRBL CNC. """
 
-    def __init__(self, device=None, bitrate=9600):
+    def __init__(self, device=None, bitrate=None):
         self.serial = None
         self.bitrate = None
-        self.default_bitrate = bitrate
+        if(bitrate):
+            self.default_bitrate = bitrate
+        else:
+            self.default_bitrate = 9600
         self.running = False
         self.status = {}
         self.gcode_status = []
         self.connected = False
+
+        self.counter = 0  # running command counter
+        self.max_buffer_lines = 0
 
         self.l_count = 0
         self.g_count = 0
@@ -236,8 +244,15 @@ class Grbl:
         self.lastPosition = position
         return line
 
+    def runtimeCommand(self, command):
+        if command in ('?', '!', '~', chr(24)):
+            self.serial.write(command)  # Send block to grbl
+            self.serial.flush()
+        else:
+            warn("'%s' is not a valid GRBL runtime command" % command)
+
     def sendLine(self, line):
-        if self.serial :
+        if self.serial:
             l_block = self.__clean_line(line)
             log_out(l_block)
             self.serial.write(l_block + '\n')  # Send block to grbl
@@ -257,7 +272,7 @@ class Grbl:
         try:
             for line in lines:
                 self.streamLine(line)
-                time.sleep(0.01)
+                time.sleep(0.2)
                 if debug:
                     raw_input("")
         except KeyboardInterrupt:
