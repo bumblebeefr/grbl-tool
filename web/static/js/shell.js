@@ -45,13 +45,6 @@ var Josh = Josh || {};
 					callback();
 				}
 			},
-			help : {
-				exec : function(cmd, args, callback) {
-					callback(self.templates.help({
-						commands : commands()
-					}));
-				}
-			},
 			history : {
 				exec : function(cmd, args, callback) {
 					if (args[0] == "-c") {
@@ -93,7 +86,6 @@ var Josh = Josh || {};
 			commands : commands,
 			templates : {
 				history : _.template("<div><% _.each(items, function(cmd, i) { %><div><%- i %>&nbsp;<%- cmd %></div><% }); %></div>"),
-				help : _.template("<div><div><strong>Commands:</strong></div><% _.each(commands, function(cmd) { %><div>&nbsp;<%- cmd %></div><% }); %></div>"),
 				bad_command : _.template('<div><strong>Unrecognized command:&nbsp;</strong><%=cmd%></div>'),
 				input_cmd : _.template('<div id="<%- id %>"><span class="prompt"></span>&nbsp;<span class="input"><span class="left"/><span class="cursor"/><span class="right"/></span></div>'),
 				input_search : _.template('<div id="<%- id %>">(reverse-i-search)`<span class="searchterm"></span>\':&nbsp;<span class="input"><span class="left"/><span class="cursor"/><span class="right"/></span></div>'),
@@ -142,6 +134,7 @@ var Josh = Josh || {};
 						return callback();
 					});
 				}
+				self.scrollToBottom();
 				return callback();
 			},
 			log : function(type, str) {// BBB Shortcut to promp
